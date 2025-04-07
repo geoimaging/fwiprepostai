@@ -1,1 +1,3 @@
 # SeisKit
+
+- Sanish Bhochhibhoya
