@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import seiskit.pre_process_waveform as pre_process
+import fwiprepostai.pre_process_waveform as pre_process
 
 def get_prediction(model_class, waveform_time_np, pad_time_ms=0):
     assert waveform_time_np.shape == (24,1000)
