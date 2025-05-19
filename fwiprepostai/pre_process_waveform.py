@@ -8,10 +8,9 @@ def zero_padding_and_trim_each(waveform_np, freq=1000, pad_time=0, upto_time=Non
     #upto_time is in ms
     batch_size = np.shape(waveform_np)[0]
     org_waveform_len = np.shape(waveform_np)[2]
-    #print(org_waveform_len)
+    
     if upto_time is not None:
         org_waveform_len = int(upto_time * 1000/freq)
-    #    print(upto_time * 1000/freq)
         
     if isinstance(pad_time, list):
         if len(pad_time)!=batch_size:
@@ -22,8 +21,6 @@ def zero_padding_and_trim_each(waveform_np, freq=1000, pad_time=0, upto_time=Non
             raise exception("pad time should be greater or equal to 0")
         paddings = [int(pad_time*freq) for _ in range(batch_size)]
     
-    
-    # print(f"Pad_time = {[i/1000 for i in paddings]}")
     zero_prefixed_waveforms = []
  
     for i in range(batch_size):
@@ -37,26 +34,10 @@ def zero_padding_and_trim_each(waveform_np, freq=1000, pad_time=0, upto_time=Non
 def process_waveforms_images(waveforms_time_np, images_np, norm_x, norm_x_fft, norm_vs, fft_option, f_type, dc_correction, cosine_taper_ms, order_filter, order_norm, order_fft, filter_wn, norm_x_excl_receivers=[], fft_size_eq_time=True, norm_each_time_domain=False, detailed_print=False, summarize_head='no_summary'):
     #v8: Changes "bp_filter", "norm_before_fft" changed to order_filter, order_fft, order_norm
     
-    # waveforms_time_np: waveforms from time domain only shape: (n=1, 24, 1000)
     assert fft_option in ['abs', 'real', 'imag', 'angle', 'none', 'real_imag', 'abs_angle', 'time_abs'], f"not {fft_option}"
     
-    # if norm_before_fft = True; Normalization is done before fft
-    # Norm_x = dictionary of format {'norm':True/False/None, 'min_val':..., 'max_val':..} 
-    #      if normalization to be done of x (time domain)
-    # norm_x_fft: if normalization to be done to frequency domain (real, imag, abs, angle)
-    # norm_vs: if normalization to be done to vs/images_np
-    
-    #checks = dimension_verification()
-    #print(f"process_waveforms_images: shape: {waveforms_time_np.shape}")
-    #waveform shape = (1,24,1000)
     waveform_dim = waveforms_time_np.shape
     
-    #if waveform_dim[0] >1:
-    #    raise Exception ("Error: n =1?")
-    
-    #filter_wn = {'min':10, 'max':100}
-    
-    #Before this: Augmentation 
     string = 'Augment (if any) ->'
     
     #Step 1: DC Correction: (Mean Correction)
@@ -98,19 +79,13 @@ def process_waveforms_images(waveforms_time_np, images_np, norm_x, norm_x_fft, n
         waveforms_time_np[...,0] = waveforms_t_only
         string = string + 'Norm_Each_Time_Domain -> '
         
-    
     if np.any(np.isnan(waveforms_time_np)):
         print("NAN found in the input")
     if np.any(np.isinf(waveforms_time_np)):
         print("INF found in the input")
 
-    #print(waveform_data.shape)
-    #print(images_vs_data.shape)
     if summarize_head != 'no_summary':
         summarize_load_Dataset(waveforms_time_np, images_np, summarize_head)
-    #print(f"process_waveforms_images END: shape: {waveforms_time_np.shape}")
-    #waveform shape = (1,24,1000,3)
-    #print(string)
     return waveforms_time_np, images_np, string
 
 def exclude_reciever_in_array(array, exclude_indices):
@@ -120,17 +95,11 @@ def exclude_reciever_in_array(array, exclude_indices):
         all_indices = list(range(array.shape[-2]))
         assert all(index in all_indices for index in exclude_indices), f"Not all indices in exclude_indices are valid: NOT ALL of {exclude_indices} in {all_indices}."
         include_indices = [i for i in all_indices if i not in exclude_indices]
-        #print(include_indices)
         # Select the slices from the original array using the list of included indices
         sliced_array = copy.deepcopy(array[:, include_indices, :])
-        #print(sliced_array.shape)
     return sliced_array
 
 def data_norm_max_min(array, norm_dict, f_type, norm_x_excl_receivers=[]):
-    # shape of dataset should be either 500*25*400 (x) or 500*24*60 (vs)
-    #assert array.shape == (500, 100, 400) or array.shape == (500, 100, 201) or array.shape == (500, 24, 1000), f"INPUT SHAPE NOT ALLOWED! CHECK THE CODE!!! SHAPE PROVIDED IS : #{array.shape}"
-    #print(array.shape)
-    #print(norm_dict)
     if norm_dict['norm'] == None or norm_dict['norm'] == False:
         max_val = 1
         min_val = 0
@@ -140,7 +109,6 @@ def data_norm_max_min(array, norm_dict, f_type, norm_x_excl_receivers=[]):
             sliced_array = exclude_reciever_in_array(array, exclude_indices=norm_x_excl_receivers) #[1, 2, 3]
             max_val = np.max(np.abs(sliced_array), axis = (1,2), keepdims=True)
 
-            #print(max_val.shape)
         elif norm_dict['max'] == 'max_val':
             sliced_array = exclude_reciever_in_array(array, exclude_indices=norm_x_excl_receivers) #[1, 2, 3]
             max_val = np.max(sliced_array, axis = (1,2), keepdims=True)
@@ -155,9 +123,6 @@ def data_norm_max_min(array, norm_dict, f_type, norm_x_excl_receivers=[]):
             min_val = np.min(sliced_array, axis = (1,2), keepdims=True)
         else:
             min_val = norm_dict['min']
-    
-    #print(max_val)#
-    #print(min_val)#
     norm_array = (array-min_val)/(max_val-min_val)
     return norm_array.astype(f_type)
     
@@ -261,10 +226,7 @@ def do_filter_norm_fft(waveforms_time_np, images_np, calc, string = '', **kwargs
             wn = filter_wn
         else:
             wn = get_wn(filter_wn)
-        #print(np.shape(waveforms_time_np))
-        #print(f"wn:{wn}")
         sos = scipy.signal.butter(N=order, Wn=wn, btype = 'bandpass', fs=1000, output='sos')
-      #  print(np.shape(waveforms_time_np))
         waveforms_fft_processed= scipy.signal.sosfiltfilt(sos,waveforms_time_np, axis=-1) #Adjusted for 4dims (No need as ndim is always 3)
         
         string = string + 'filter -> '
@@ -324,8 +286,6 @@ def rfft(amplitude, **kwargs):
     return rfft
 
 def fourier_transform(array, n,  detailed_print, f_type='float64', option=None):
-    # waveform shape is [n, 24, 1000]
-    #print(f"fourier_transform: shape: {array.shape}")
     
     assert option in ['abs', 'real', 'imag', 'angle', 'none', 'real_imag', 'abs_angle', 'time_abs'], f"not {option}"
     # Note array is of any; fourier transform will be done on -1

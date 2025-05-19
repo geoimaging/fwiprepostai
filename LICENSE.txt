@@ -1,5 +1,5 @@
 This license applies to fwiprepostai, a Python package for surface wave processing.
-Copyright (C) 2025 Sanish Bhochhibhoya (sbhochhi@vt.edu)
+Copyright (C) 2025 Vantassel, Bhochhibhoya (sbhochhi@vt.edu)
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
